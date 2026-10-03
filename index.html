@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Laundry</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        space: {
+                            900: '#060B19', // Deep space background
+                            800: '#111827', // Lighter space/cards
+                            700: '#1F2937', // Hover states
+                        },
+                        neon: {
+                            blue: '#3B82F6',
+                            purple: '#8B5CF6',
+                            pink: '#EC4899'
+                        }
+                    },
+                    boxShadow: {
+                        'neon-blue': '0 0 10px rgba(59, 130, 246, 0.7), 0 0 20px rgba(59, 130, 246, 0.5)',
+                        'neon-purple': '0 0 10px rgba(139, 92, 246, 0.7), 0 0 20px rgba(139, 92, 246, 0.5)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Courier New', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #060B19;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* View Transition Animations */
+        .view-section {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+        }
+        
+        .view-section.active {
+            display: flex; /* or block depending on layout, handled via classes */
+            opacity: 1;
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+
+        .view-section.active-block {
+            display: block;
+            opacity: 1;
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #3B82F6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8B5CF6; }
+
+        /* Background Effects */
+        .stars-bg {
+            background-image: radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                              radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px);
+            background-size: 550px 550px, 350px 350px;
+            background-position: 0 0, 20px 20px;
+        }
+
+        /* Print Media Query */
+        @media print {
+            body {
+                background-color: white !important;
+                color: black !important;
+                background-image: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            #receipt-container {
+                width: 100%;
+                max-width: 350px;
+                margin: 0 auto;
+                background: white;
+                color: black;
+                padding: 20px;
+                box-shadow: none;
+                border: none;
+            }
+            #app-layout {
+                background: white !important;
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            main {
+                overflow: visible !important;
+                padding: 0 !important;
+            }
+        }
+        
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="h-screen w-screen stars-bg">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 no-print"></div>
+
+    <!-- ========================================== -->
+    <!-- VIEW: LANDING PAGE -->
+    <!-- ========================================== -->
+    <div id="view-landing" class="view-section active flex-col items-center justify-center min-h-screen relative no-print">
+        <!-- Glowing Orb Background -->
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-neon-purple rounded-full blur-[120px] opacity-20 pointer-events-none"></div>
+        
+        <div class="z-10 text-center px-6 max-w-4xl">
+            <div class="inline-block mb-6 p-5 rounded-full bg-space-800 shadow-neon-blue border border-space-700">
+                <i class="fas fa-meteor text-5xl text-neon-blue"></i>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple">
+                Space Laundry
+            </h1>
+            <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+                Next-generation fabric care delivered at the speed of light. Stellar cleaning, zero gravity hassle.
+            </p>
+            <button onclick="navigate('login')" class="px-10 py-4 bg-transparent border-2 border-neon-blue text-neon-blue font-bold rounded-full hover:bg-neon-blue hover:text-white hover:shadow-neon-blue transition-all duration-300 group">
+                Enter Command Center 
+                <i class="fas fa-space-shuttle ml-2 group-hover:translate-x-2 transition-transform"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW: LOGIN -->
+    <!-- ========================================== -->
+    <div id="view-login" class="view-section flex-col items-center justify-center min-h-screen px-4 no-print relative">
+        <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-neon-blue rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
+        
+        <div class="bg-space-800 p-8 md:p-10 rounded-2xl w-full max-w-md shadow-neon-purple border border-space-700 z-10 backdrop-blur-sm bg-opacity-80">
+            <div class="text-center mb-8">
+                <i class="fas fa-user-astronaut text-4xl text-neon-purple mb-4"></i>
+                <h2 class="text-3xl font-bold text-white">Crew Login</h2>
+                <p class="text-gray-400 mt-2 text-sm">Access the operational dashboard</p>
+            </div>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-5">
+                    <label class="block text-gray-400 text-sm font-semibold mb-2" for="username">Commander ID (Username)</label>
+                    <div class="relative">
+                        <i class="fas fa-id-badge absolute left-4 top-3.5 text-gray-500"></i>
+                        <input type="text" id="username" class="w-full bg-space-900 border border-space-700 text-white rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-colors" placeholder="admin" value="admin" required>
+                    </div>
+                </div>
+                <div class="mb-8">
+                    <label class="block text-gray-400 text-sm font-semibold mb-2" for="password">Passcode</label>
+                    <div class="relative">
+                        <i class="fas fa-fingerprint absolute left-4 top-3.5 text-gray-500"></i>
+                        <input type="password" id="password" class="w-full bg-space-900 border border-space-700 text-white rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-colors" placeholder="••••••••" value="admin" required>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-neon-blue to-neon-purple text-white font-bold py-3 px-4 rounded-lg shadow-neon-blue hover:opacity-90 transition-all transform hover:scale-[1.02]">
+                    Initialize System
+                </button>
+            </form>
+            <button onclick="navigate('landing')" class="w-full mt-4 text-gray-500 hover:text-gray-300 text-sm transition-colors">
+                <i class="fas fa-arrow-left mr-1"></i> Abort
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- APP LAYOUT (Sidebar + Main Content) -->
+    <!-- ========================================== -->
+    <div id="app-layout" class="view-section hidden h-screen w-full overflow-hidden bg-space-900 bg-opacity-95">
+        
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-space-800 border-r border-space-700 flex flex-col flex-shrink-0 transition-transform duration-300 absolute md:relative z-40 h-full -translate-x-full md:translate-x-0 no-print">
+            <div class="p-6 border-b border-space-700 flex items-center justify-between">
+                <div class="flex items-center gap-3 font-bold text-xl text-white">
+                    <i class="fas fa-meteor text-neon-blue"></i>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">SpaceLaundry</span>
+                </div>
+                <button class="md:hidden text-gray-400 hover:text-white" onclick="toggleSidebar()">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+                <button onclick="navigateMenu('dashboard')" id="nav-dashboard" class="nav-menu-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg text-white bg-space-700 shadow-neon-blue/20">
+                    <i class="fas fa-radar w-5 text-center text-neon-blue"></i>
+                    <span class="font-medium">Dashboard</span>
+                </button>
+                <button onclick="navigateMenu('order')" id="nav-order" class="nav-menu-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg text-gray-400 hover:bg-space-700 hover:text-white transition-colors">
+                    <i class="fas fa-plus-circle w-5 text-center text-neon-purple"></i>
+                    <span class="font-medium">Order Menu</span>
+                </button>
+                <button onclick="navigateMenu('checkout')" id="nav-checkout" class="nav-menu-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg text-gray-400 hover:bg-space-700 hover:text-white transition-colors relative">
+                    <i class="fas fa-shopping-cart w-5 text-center text-neon-pink"></i>
+                    <span class="font-medium">Checkout</span>
+                    <span id="cart-badge" class="absolute right-4 bg-neon-pink text-white text-xs font-bold px-2 py-1 rounded-full hidden">0</span>
+                </button>
+            </nav>
+            
+            <div class="p-4 border-t border-space-700">
+                <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors">
+                    <i class="fas fa-power-off w-5 text-center"></i>
+                    <span class="font-medium">Disconnect</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Overlay for mobile sidebar -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden md:hidden no-print"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col h-full overflow-y-auto relative w-full">
+            
+            <!-- Mobile Header -->
+            <header class="md:hidden bg-space-800 p-4 border-b border-space-700 flex items-center justify-between sticky top-0 z-20 no-print shadow-md">
+                <div class="flex items-center gap-2 font-bold text-white">
+                    <i class="fas fa-meteor text-neon-blue"></i>
+                    <span>SpaceLaundry</span>
+                </div>
+                <button onclick="toggleSidebar()" class="text-white p-2 focus:outline-none">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </header>
+
+            <!-- Content Area Container -->
+            <div class="p-4 md:p-8 w-full max-w-7xl mx-auto flex-1">
+                
+                <!-- ==================== MENU: DASHBOARD ==================== -->
+                <div id="menu-dashboard" class="app-menu block">
+                    <div class="no-print">
+                        <h2 class="text-3xl font-bold mb-2 text-white">Command Center</h2>
+                        <p class="text-gray-400 mb-8">System status and operational overview for today cycle.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <!-- Stat Card 1 -->
+                            <div class="bg-space-800 p-6 rounded-2xl border border-space-700 relative overflow-hidden group hover:border-neon-blue transition-colors">
+                                <div class="absolute -right-4 -top-4 w-24 h-24 bg-neon-blue/10 rounded-full blur-xl group-hover:bg-neon-blue/20 transition-all"></div>
+                                <div class="relative z-10">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div class="p-3 bg-space-900 rounded-lg text-neon-blue border border-space-700"><i class="fas fa-satellite-dish text-xl"></i></div>
+                                        <span class="text-green-400 text-sm font-semibold bg-green-400/10 px-2 py-1 rounded">Active</span>
+                                    </div>
+                                    <h3 class="text-3xl font-bold text-white mb-1" id="stat-orders">14</h3>
+                                    <p class="text-gray-400 text-sm">Orders in Orbit</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Stat Card 2 -->
+                            <div class="bg-space-800 p-6 rounded-2xl border border-space-700 relative overflow-hidden group hover:border-neon-purple transition-colors">
+                                <div class="absolute -right-4 -top-4 w-24 h-24 bg-neon-purple/10 rounded-full blur-xl group-hover:bg-neon-purple/20 transition-all"></div>
+                                <div class="relative z-10">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div class="p-3 bg-space-900 rounded-lg text-neon-purple border border-space-700"><i class="fas fa-coins text-xl"></i></div>
+                                        <span class="text-green-400 text-sm font-semibold bg-green-400/10 px-2 py-1 rounded">+12%</span>
+                                    </div>
+                                    <h3 class="text-3xl font-bold text-white mb-1" id="stat-revenue">Rp 450.000</h3>
+                                    <p class="text-gray-400 text-sm">Daily Credits Collected</p>
+                                </div>
+                            </div>
+
+                            <!-- Stat Card 3 -->
+                            <div class="bg-space-800 p-6 rounded-2xl border border-space-700 relative overflow-hidden group hover:border-neon-pink transition-colors">
+                                <div class="absolute -right-4 -top-4 w-24 h-24 bg-neon-pink/10 rounded-full blur-xl group-hover:bg-neon-pink/20 transition-all"></div>
+                                <div class="relative z-10">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div class="p-3 bg-space-900 rounded-lg text-neon-pink border border-space-700"><i class="fas fa-check-double text-xl"></i></div>
+                                    </div>
+                                    <h3 class="text-3xl font-bold text-white mb-1" id="stat-completed">42</h3>
+                                    <p class="text-gray-400 text-sm">Missions Completed</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Action Banner -->
+                        <div class="w-full bg-gradient-to-r from-space-800 to-space-900 p-8 rounded-2xl border border-space-700 flex flex-col md:flex-row items-center justify-between shadow-lg relative overflow-hidden">
+                            <div class="absolute left-0 top-0 w-1 bg-gradient-to-b from-neon-blue to-neon-purple h-full"></div>
+                            <div class="md:w-2/3 mb-6 md:mb-0 z-10">
+                                <h3 class="text-2xl font-bold text-white mb-2">Incoming Cargo!</h3>
+                                <p class="text-gray-400">Initiate a new laundry sequence for newly arrived garments.</p>
+                            </div>
+                            <button onclick="navigateMenu('order')" class="px-8 py-3 bg-space-700 border border-space-600 hover:bg-space-600 hover:border-neon-blue text-white rounded-lg shadow-lg font-medium transition-all w-full md:w-auto z-10 flex items-center justify-center gap-2">
+                                <i class="fas fa-rocket text-neon-blue"></i> Start New Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== MENU: ORDER ==================== -->
+                <div id="menu-order" class="app-menu hidden no-print">
+                    <h2 class="text-3xl font-bold mb-2 text-white">Service Catalog</h2>
+                    <p class="text-gray-400 mb-8">Select operational protocols for the incoming fabric.</p>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Services List -->
+                        <div class="lg:col-span-2 space-y-4" id="services-container">
+                            <!-- Service Items will be rendered here by JS -->
+                        </div>
+
+                        <!-- Add to Cart Panel -->
+                        <div class="lg:col-span-1">
+                            <div class="bg-space-800 rounded-2xl border border-space-700 shadow-xl p-6 sticky top-24">
+                                <h3 class="font-semibold text-xl mb-6 text-white flex items-center gap-2">
+                                    <i class="fas fa-sliders-h text-neon-purple"></i> Mission Parameters
+                                </h3>
+                                
+                                <form id="addToCartForm" onsubmit="handleAddToCart(event)">
+                                    <div class="mb-4">
+                                        <label class="block text-gray-400 text-sm mb-2">Selected Protocol</label>
+                                        <div class="w-full bg-space-900 border border-space-700 text-neon-blue rounded-lg px-4 py-3 font-mono text-sm break-words" id="selected-service-display">
+                                            Select a service from catalog
+                                        </div>
+                                        <input type="hidden" id="selected-service-id" required>
+                                    </div>
+                                    
+                                    <div class="mb-6">
+                                        <label class="block text-gray-400 text-sm mb-2" id="qty-label">Quantity / Weight (Kg)</label>
+                                        <div class="relative">
+                                            <i class="fas fa-balance-scale absolute left-4 top-3.5 text-gray-500"></i>
+                                            <input type="number" id="item-qty" min="0.1" step="0.1" class="w-full bg-space-900 border border-space-700 text-white rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-neon-blue transition-colors" placeholder="e.g. 2.5" required disabled>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-space-700 pt-4 mb-6">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-gray-400">Estimated Cost</span>
+                                        </div>
+                                        <div class="text-2xl font-bold text-white" id="item-subtotal">Rp 0</div>
+                                    </div>
+                                    
+                                    <button type="submit" id="btn-add-cart" class="w-full py-3 bg-space-700 border border-space-600 text-gray-400 font-bold rounded-lg transition-all cursor-not-allowed flex items-center justify-center gap-2" disabled>
+                                        <i class="fas fa-download"></i> Load into Cargo
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== MENU: CHECKOUT / PRINT ==================== -->
+                <div id="menu-checkout" class="app-menu hidden">
+                    
+                    <!-- Checkout UI (Screen Only) -->
+                    <div class="no-print">
+                        <h2 class="text-3xl font-bold mb-2 text-white">Checkout Terminal</h2>
+                        <p class="text-gray-400 mb-8">Review cargo manifests and finalize transaction.</p>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                            
+                            <!-- Cart Items -->
+                            <div class="xl:col-span-2">
+                                <div class="bg-space-800 rounded-2xl border border-space-700 shadow-xl overflow-hidden mb-6">
+                                    <div class="p-5 border-b border-space-700 flex justify-between items-center bg-space-900/50">
+                                        <h3 class="font-semibold text-lg text-white"><i class="fas fa-list-ul text-neon-pink mr-2"></i>Cargo Manifest</h3>
+                                        <button onclick="clearCart()" class="text-sm text-red-400 hover:text-red-300 px-3 py-1 bg-red-400/10 rounded transition-colors">Jettison All</button>
+                                    </div>
+                                    
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left">
+                                            <thead>
+                                                <tr class="bg-space-900/80 text-gray-400 text-xs uppercase tracking-wider">
+                                                    <th class="p-4 font-medium">Protocol / Service</th>
+                                                    <th class="p-4 font-medium text-center">Qty/Wt</th>
+                                                    <th class="p-4 font-medium text-right">Price</th>
+                                                    <th class="p-4 font-medium text-right">Subtotal</th>
+                                                    <th class="p-4 font-medium text-center">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cart-table-body" class="divide-y divide-space-700">
+                                                <!-- Cart items rendered here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- Empty State -->
+                                    <div id="empty-cart-msg" class="p-12 text-center text-gray-500">
+                                        <div class="text-5xl mb-4 text-space-700"><i class="fas fa-box-open"></i></div>
+                                        <p>Cargo bay is empty.</p>
+                                        <button onclick="navigateMenu('order')" class="mt-4 text-neon-blue hover:text-white text-sm transition-colors">Load items from Catalog</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Finalization Panel -->
+                            <div class="xl:col-span-1">
+                                <div class="bg-space-800 rounded-2xl border border-space-700 shadow-xl p-6 sticky top-24">
+                                    <h3 class="font-semibold text-xl mb-6 text-white border-b border-space-700 pb-4">Transaction Details</h3>
+                                    
+                                    <div class="mb-6">
+                                        <label class="block text-gray-400 text-sm mb-2 font-semibold">Commander / Client Name</label>
+                                        <div class="relative">
+                                            <i class="fas fa-user-tag absolute left-4 top-3.5 text-gray-500"></i>
+                                            <input type="text" id="customer-name" class="w-full bg-space-900 border border-space-700 text-white rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-neon-pink transition-colors" placeholder="e.g. John Shepard">
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-3 mb-6 text-sm text-gray-300">
+                                        <div class="flex justify-between">
+                                            <span>Total Items:</span>
+                                            <span id="summary-items" class="text-white font-medium">0</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border-t border-space-700 pt-4 mb-6">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-gray-400 text-lg">Total Cost</span>
+                                        </div>
+                                        <div class="text-3xl font-bold text-neon-pink" id="summary-total">Rp 0</div>
+                                    </div>
+
+                                    <button id="btn-print" onclick="processAndPrint()" class="w-full py-4 bg-gradient-to-r from-neon-purple to-neon-pink text-white font-bold rounded-lg shadow-neon-purple hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex justify-center items-center gap-2" disabled>
+                                        <i class="fas fa-print"></i> Process & Print Receipt
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receipt Format (Hidden on Screen, Visible on Print) -->
+                    <div class="print-only">
+                        <div id="receipt-container">
+                            <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;">
+                                <h1 style="font-size: 24px; font-weight: bold; margin: 0; text-transform: uppercase;">Space Laundry</h1>
+                                <p style="margin: 5px 0 0; font-size: 12px; font-family: monospace;">Galactic Sector 7G</p>
+                                <p style="margin: 2px 0 0; font-size: 12px; font-family: monospace;">Tel: 555-ORBIT</p>
+                            </div>
+                            
+                            <div style="font-family: monospace; font-size: 13px; margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Date: <span id="print-date"></span></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                    <span>Client: <strong id="print-customer"></strong></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                    <span>Receipt #: <span id="print-id"></span></span>
+                                </div>
+                            </div>
+
+                            <table style="width: 100%; font-family: monospace; font-size: 13px; border-collapse: collapse; margin-bottom: 15px;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid #000; border-top: 1px solid #000;">
+                                        <th style="text-align: left; padding: 5px 0;">Item</th>
+                                        <th style="text-align: center; padding: 5px 0;">Qty</th>
+                                        <th style="text-align: right; padding: 5px 0;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="print-items" style="border-bottom: 1px solid #000;">
+                                    <!-- Print items populated by JS -->
+                                </tbody>
+                            </table>
+
+                            <div style="text-align: right; font-family: monospace; font-size: 15px; font-weight: bold; margin-bottom: 20px;">
+                                TOTAL: <span id="print-total"></span>
+                            </div>
+
+                            <div style="text-align: center; font-family: monospace; font-size: 11px;">
+                                <p style="margin: 0;">Thank you for trusting Space Laundry!</p>
+                                <p style="margin: 4px 0 0;">"Clean clothes at lightspeed."</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCRIPTS -->
+    <!-- ========================================== -->
+    <script>
+        // Data Store
+        const STATE = {
+            services: [
+                { id: 's1', name: 'Cuci Kering Kiloan', price: 6000, type: 'kg', icon: 'fas fa-tshirt', color: 'text-neon-blue' },
+                { id: 's2', name: 'Cuci Basah Kiloan', price: 4000, type: 'kg', icon: 'fas fa-water', color: 'text-cyan-400' },
+                { id: 's3', name: 'Setrika Kiloan', price: 5000, type: 'kg', icon: 'fas fa-temperature-high', color: 'text-orange-400' },
+                { id: 's4', name: 'Cuci Komplit (Kering + Setrika)', price: 10000, type: 'kg', icon: 'fas fa-star', color: 'text-yellow-400' },
+                { id: 's5', name: 'Bedcover Besar', price: 25000, type: 'pcs', icon: 'fas fa-bed', color: 'text-neon-purple' },
+                { id: 's6', name: 'Bedcover Kecil', price: 20000, type: 'pcs', icon: 'fas fa-bed', color: 'text-neon-pink' },
+                { id: 's7', name: 'Jas / Safari (Satuan)', price: 35000, type: 'pcs', icon: 'fas fa-user-tie', color: 'text-gray-300' }
+            ],
+            cart: [],
+            stats: {
+                orders: 14,
+                revenue: 450000,
+                completed: 42
+            },
+            selectedService: null
+        };
+
+        // Utility: Format Currency
+        const formatRupiah = (num) => {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+        };
+
+        // Utility: Custom Toast Notification
+        const showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const baseClass = "flex items-center gap-3 px-5 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full opacity-0 min-w-[250px] border border-space-700 backdrop-blur-md";
+            
+            let typeStyles, icon;
+            if (type === 'success') {
+                typeStyles = "bg-space-800 text-white border-l-4 border-l-green-500 shadow-neon-blue/20";
+                icon = '<i class="fas fa-check-circle text-green-500 text-xl"></i>';
+            } else if (type === 'error') {
+                typeStyles = "bg-space-800 text-white border-l-4 border-l-red-500 shadow-neon-pink/20";
+                icon = '<i class="fas fa-exclamation-circle text-red-500 text-xl"></i>';
+            } else {
+                typeStyles = "bg-space-800 text-white border-l-4 border-l-neon-blue shadow-neon-blue/20";
+                icon = '<i class="fas fa-info-circle text-neon-blue text-xl"></i>';
+            }
+            
+            toast.className = `${baseClass} ${typeStyles}`;
+            toast.innerHTML = `${icon} <span class="font-medium text-sm tracking-wide">${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+            
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        // Navigation: Main Views (Landing, Login, App)
+        const navigate = (view) => {
+            const views = ['view-landing', 'view-login', 'app-layout'];
+            views.forEach(v => {
+                const el = document.getElementById(v);
+                el.classList.remove('active', 'active-block');
+                el.classList.add('hidden');
+                
+                // Force layout recalculation for animation
+                void el.offsetWidth; 
+            });
+            
+            const target = document.getElementById(view === 'app' ? 'app-layout' : `view-${view}`);
+            target.classList.remove('hidden');
+            if (view === 'app') {
+                target.classList.add('active'); // Using flex
+                navigateMenu('dashboard');
+                renderDashboardStats();
+            } else {
+                target.classList.add('active'); // Using flex
+            }
+        };
+
+        // Navigation: App Menus
+        const navigateMenu = (menu) => {
+            const menus = ['dashboard', 'order', 'checkout'];
+            menus.forEach(m => {
+                document.getElementById(`menu-${m}`).classList.add('hidden');
+                document.getElementById(`menu-${m}`).classList.remove('active-block');
+                
+                // Update sidebar active state
+                const btn = document.getElementById(`nav-${m}`);
+                btn.classList.remove('bg-space-700', 'text-white', 'shadow-neon-blue/20');
+                btn.classList.add('text-gray-400');
+            });
+            
+            const target = document.getElementById(`menu-${menu}`);
+            target.classList.remove('hidden');
+            target.classList.add('active-block');
+            
+            const activeBtn = document.getElementById(`nav-${menu}`);
+            activeBtn.classList.remove('text-gray-400');
+            activeBtn.classList.add('bg-space-700', 'text-white', 'shadow-neon-blue/20');
+
+            if (menu === 'order') renderServices();
+            if (menu === 'checkout') renderCart();
+
+            // Close mobile sidebar
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (!sidebar.classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
+            }
+        };
+
+        const toggleSidebar = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        };
+
+        // Authentication
+        const handleLogin = (e) => {
+            e.preventDefault();
+            showToast('Authentication Successful. Welcome Commander.', 'success');
+            setTimeout(() => navigate('app'), 1000);
+        };
+
+        const handleLogout = () => {
+            showToast('Disconnecting from system...', 'info');
+            setTimeout(() => navigate('landing'), 800);
+        };
+
+        // Render Services in Order Menu
+        const renderServices = () => {
+            const container = document.getElementById('services-container');
+            if (container.children.length > 0) return; // Already rendered
+
+            STATE.services.forEach(svc => {
+                const card = document.createElement('div');
+                card.className = "bg-space-800 p-4 rounded-xl border border-space-700 hover:border-space-500 cursor-pointer transition-all flex items-center justify-between group";
+                card.onclick = () => selectService(svc.id);
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-space-900 border border-space-700 flex items-center justify-center ${svc.color} group-hover:scale-110 transition-transform">
+                            <i class="${svc.icon} text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-medium">${svc.name}</h4>
+                            <p class="text-space-400 text-sm font-semibold">${formatRupiah(svc.price)} / ${svc.type}</p>
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 rounded-full border border-space-600 flex items-center justify-center text-space-600 group-hover:border-neon-blue group-hover:text-neon-blue transition-colors">
+                        <i class="fas fa-chevron-right text-sm"></i>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        };
+
+        // Handle Service Selection
+        const selectService = (id) => {
+            const service = STATE.services.find(s => s.id === id);
+            STATE.selectedService = service;
+            
+            document.getElementById('selected-service-id').value = id;
+            document.getElementById('selected-service-display').innerHTML = `<span class="${service.color}"><i class="${service.icon} mr-2"></i></span> ${service.name} (${formatRupiah(service.price)}/${service.type})`;
+            
+            const qtyInput = document.getElementById('item-qty');
+            qtyInput.disabled = false;
+            qtyInput.value = '';
+            qtyInput.focus();
+            
+            document.getElementById('qty-label').innerText = service.type === 'kg' ? 'Weight (Kg)' : 'Quantity (Pcs)';
+            document.getElementById('item-subtotal').innerText = 'Rp 0';
+            
+            updateAddBtnState();
+        };
+
+        // Input Listener for Live Subtotal
+        document.getElementById('item-qty').addEventListener('input', (e) => {
+            if (!STATE.selectedService) return;
+            const val = parseFloat(e.target.value) || 0;
+            const subtotal = val * STATE.selectedService.price;
+            document.getElementById('item-subtotal').innerText = formatRupiah(subtotal);
+            updateAddBtnState();
+        });
+
+        const updateAddBtnState = () => {
+            const qty = parseFloat(document.getElementById('item-qty').value) || 0;
+            const btn = document.getElementById('btn-add-cart');
+            if (STATE.selectedService && qty > 0) {
+                btn.disabled = false;
+                btn.className = "w-full py-3 bg-gradient-to-r from-neon-blue to-neon-purple text-white font-bold rounded-lg shadow-neon-blue transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2";
+            } else {
+                btn.disabled = true;
+                btn.className = "w-full py-3 bg-space-700 border border-space-600 text-gray-400 font-bold rounded-lg transition-all cursor-not-allowed flex items-center justify-center gap-2";
+            }
+        };
+
+        const handleAddToCart = (e) => {
+            e.preventDefault();
+            if (!STATE.selectedService) return;
+
+            const qty = parseFloat(document.getElementById('item-qty').value);
+            if (!qty || qty <= 0) return;
+
+            const item = {
+                id: Date.now().toString(),
+                serviceId: STATE.selectedService.id,
+                name: STATE.selectedService.name,
+                price: STATE.selectedService.price,
+                type: STATE.selectedService.type,
+                qty: qty,
+                subtotal: qty * STATE.selectedService.price
+            };
+
+            STATE.cart.push(item);
+            
+            // Reset Form
+            STATE.selectedService = null;
+            document.getElementById('selected-service-id').value = '';
+            document.getElementById('selected-service-display').innerHTML = 'Select a service from catalog';
+            const qtyInput = document.getElementById('item-qty');
+            qtyInput.value = '';
+            qtyInput.disabled = true;
+            document.getElementById('item-subtotal').innerText = 'Rp 0';
+            updateAddBtnState();
+            
+            updateCartBadge();
+            showToast('Item loaded into cargo manifest.', 'success');
+        };
+
+        const updateCartBadge = () => {
+            const badge = document.getElementById('cart-badge');
+            if (STATE.cart.length > 0) {
+                badge.innerText = STATE.cart.length;
+                badge.classList.remove('hidden');
+                badge.classList.add('animate-pulse');
+                setTimeout(() => badge.classList.remove('animate-pulse'), 1000);
+            } else {
+                badge.classList.add('hidden');
+            }
+        };
+
+        const renderCart = () => {
+            const tbody = document.getElementById('cart-table-body');
+            const emptyMsg = document.getElementById('empty-cart-msg');
+            const btnPrint = document.getElementById('btn-print');
+            
+            tbody.innerHTML = '';
+            let grandTotal = 0;
+
+            if (STATE.cart.length === 0) {
+                emptyMsg.classList.remove('hidden');
+                tbody.parentElement.classList.add('hidden');
+                btnPrint.disabled = true;
+            } else {
+                emptyMsg.classList.add('hidden');
+                tbody.parentElement.classList.remove('hidden');
+                btnPrint.disabled = false;
+
+                STATE.cart.forEach(item => {
+                    grandTotal += item.subtotal;
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-space-800 transition-colors";
+                    tr.innerHTML = `
+                        <td class="p-4">
+                            <div class="font-medium text-white">${item.name}</div>
+                        </td>
+                        <td class="p-4 text-center text-gray-300">${item.qty} ${item.type}</td>
+                        <td class="p-4 text-right text-gray-400">${formatRupiah(item.price)}</td>
+                        <td class="p-4 text-right font-medium text-white">${formatRupiah(item.subtotal)}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="removeFromCart('${item.id}')" class="text-red-400 hover:text-red-300 w-8 h-8 rounded-lg hover:bg-space-700 transition-colors">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('summary-items').innerText = STATE.cart.length;
+            document.getElementById('summary-total').innerText = formatRupiah(grandTotal);
+            STATE.currentTotal = grandTotal; // Save for print
+        };
+
+        const removeFromCart = (id) => {
+            STATE.cart = STATE.cart.filter(item => item.id !== id);
+            updateCartBadge();
+            renderCart();
+        };
+
+        const clearCart = () => {
+            if (STATE.cart.length === 0) return;
+            STATE.cart = [];
+            updateCartBadge();
+            renderCart();
+        };
+
+        const renderDashboardStats = () => {
+            document.getElementById('stat-orders').innerText = STATE.stats.orders;
+            document.getElementById('stat-revenue').innerText = formatRupiah(STATE.stats.revenue);
+            document.getElementById('stat-completed').innerText = STATE.stats.completed;
+        };
+
+        // Print & Process Logic
+        const processAndPrint = () => {
+            if (STATE.cart.length === 0) return;
+            
+            const custName = document.getElementById('customer-name').value.trim() || 'Guest Commander';
+            
+            // Prepare Print Data
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
+            const receiptId = 'TRX-' + Math.floor(Math.random() * 90000 + 10000);
+            
+            document.getElementById('print-date').innerText = dateStr;
+            document.getElementById('print-customer').innerText = custName;
+            document.getElementById('print-id').innerText = receiptId;
+            
+            const printTbody = document.getElementById('print-items');
+            printTbody.innerHTML = '';
+            
+            STATE.cart.forEach(item => {
+                printTbody.innerHTML += `
+                    <tr>
+                        <td style="padding: 5px 0;">
+                            <div>${item.name}</div>
+                            <div style="font-size: 10px; color: #555;">@ ${item.price}/${item.type}</div>
+                        </td>
+                        <td style="text-align: center; padding: 5px 0; vertical-align: top;">${item.qty}</td>
+                        <td style="text-align: right; padding: 5px 0; vertical-align: top;">${item.subtotal.toLocaleString('id-ID')}</td>
+                    </tr>
+                `;
+            });
+            
+            document.getElementById('print-total').innerText = formatRupiah(STATE.currentTotal);
+
+            // Update Stats Simulation
+            STATE.stats.orders += 1;
+            STATE.stats.revenue += STATE.currentTotal;
+            
+            showToast('Transaction finalized. Initiating print sequence...', 'success');
+            
+            // Trigger Print Dialog after a tiny delay for DOM update
+            setTimeout(() => {
+                window.print();
+                
+                // Post-print cleanup
+                STATE.cart = [];
+                updateCartBadge();
+                renderCart();
+                document.getElementById('customer-name').value = '';
+                
+            }, 500);
+        };
+
+        // Initial setup
+        updateCartBadge();
+    </script>
+</body>
+</html>
